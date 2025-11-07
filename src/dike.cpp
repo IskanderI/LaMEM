@@ -1027,7 +1027,7 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 			//Current proc
 			xcent_search=xcenter[L][M][jj-sy];  //beyond dike end this will be 1e12 so dalong>filty
 			ycent_search=COORD_CELL(jj, sy, fs->dsy);
-			dalong=PetscSqrtReal(PetscPowReal((xcent-xcent_search),2)+PetscPowReal((yc-ycent_search),2));
+			dalong=PetscSqrtScalar(PetscPowScalar((xcent-xcent_search),2)+PetscPowScalar((yc-ycent_search),2));
 			if (jj<j && dalong<=filty) 			//if south of current point
 			{
 				xcent_north=xcenter[L][M][jj-sy+1];
@@ -1052,7 +1052,7 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 			{
 				xcent_search=xcenter_next[L][M][jj-sy];  //if beyond dike end this will be 1e12 so dalong>filty
  				ycent_search=(ycoors_next[L][M][jj-sy+1]+ycoors_next[L][M][jj-sy])/2;
-				dalong=PetscSqrtReal(PetscPowReal((xcent-xcent_search),2)+PetscPowReal((yc-ycent_search),2));
+				dalong=PetscSqrtScalar(PetscPowScalar((xcent-xcent_search),2)+PetscPowScalar((yc-ycent_search),2));
 				if (jj==sy && dalong<=filty) 			//if at southernmost cell of next proc
 				{
 					xcent_north=xcent_search;   
@@ -1078,7 +1078,7 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 			{
 				xcent_search=xcenter_prev[L][M][jj-sy];  //if beyond dike end this will be 1e12 and dalong>filty
  				ycent_search=(ycoors_prev[L][M][jj-sy+1]+ycoors_prev[L][M][jj-sy])/2;
-				dalong=PetscSqrtReal(PetscPowReal((xcent-xcent_search),2)+PetscPowReal((yc-ycent_search),2));
+				dalong=PetscSqrtScalar(PetscPowScalar((xcent-xcent_search),2)+PetscPowScalar((yc-ycent_search),2));
 
 				if (jj==sy+ny-1 && dalong<=filty) 		//if at northern most cell of prev proc
 				{
@@ -1101,22 +1101,22 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 			}
 			
 		} //done with loop over j to get mean azimuth
-		azim=PetscAtanReal(sumslope/sumadd);
+		azim=PetscAtanScalar(sumslope/sumadd);
 
 		//identify global y index of cells within dy_tot of yc on local and adjacent processors
 		j1prev=ny+sy-1; j2prev=sy;
 		j1next=ny+sy-1; j2next=sy;
 		jj1=sy+ny-1; jj2=sy;
 		//projected from slanted axis coords to get x & y grid distances needed to encompass dfac*filtx and dfac*filty
-		dx_tot=(PetscAbsReal(dfac*filtx*PetscCosReal(azim))+PetscAbsReal(dfac*filty*PetscSinReal(azim)));
-		dy_tot=(PetscAbsReal(dfac*filtx*PetscSinReal(azim))+PetscAbsReal(dfac*filty*PetscCosReal(azim)));  
+		dx_tot=(PetscAbsScalar(dfac*filtx*PetscCosScalar(azim))+PetscAbsScalar(dfac*filty*PetscSinScalar(azim)));
+		dy_tot=(PetscAbsScalar(dfac*filtx*PetscSinScalar(azim))+PetscAbsScalar(dfac*filty*PetscCosScalar(azim)));  
 
 		//Loop over y to define area of Gaussian smoothing patch
 		for(jj = sy; jj < sy+ny; jj++)
 		{
 			//Previous proc
  			yy=(ycoors_prev[L][M][jj-sy+1]+ycoors_prev[L][M][jj-sy])/2;
-			if ( dsy->grprev != -1 && PetscAbsReal(yc-yy) <= dy_tot && xcenter_prev[L][M][jj-sy] < 1.0e+12) 
+			if ( dsy->grprev != -1 && PetscAbsScalar(yc-yy) <= dy_tot && xcenter_prev[L][M][jj-sy] < 1.0e+12) 
 			{
 				j1prev=(PetscInt)PetscMin(j1prev,jj);   
 				j2prev=(PetscInt)PetscMax(j2prev,jj);
@@ -1124,7 +1124,7 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 
 			//Next proc
 			yy=(ycoors_next[L][M][jj-sy+1]+ycoors_next[L][M][jj-sy])/2;
-			if (dsy->grnext != -1 && PetscAbsReal(yy-yc) <= dy_tot && xcenter_next[L][M][jj-sy] < 1.0e+12)
+			if (dsy->grnext != -1 && PetscAbsScalar(yy-yc) <= dy_tot && xcenter_next[L][M][jj-sy] < 1.0e+12)
 			{
 				j1next=(PetscInt)PetscMin(j1next,jj);   
 				j2next=(PetscInt)PetscMax(j2next,jj);
@@ -1132,7 +1132,7 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 
 			//Current proc
 			yy=COORD_CELL(jj, sy, fs->dsy);
-			if (PetscAbsReal(yy-yc) <= dy_tot && xcenter[L][M][jj-sy] < 1.0e+12)
+			if (PetscAbsScalar(yy-yc) <= dy_tot && xcenter[L][M][jj-sy] < 1.0e+12)
 			{
 				jj1=(PetscInt)PetscMin(jj1,jj);
 				jj2=(PetscInt)PetscMax(jj2,jj);
@@ -1156,7 +1156,7 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 			for (ii = sx; ii < sx+nx; ii++)
 			{
 				xx = COORD_CELL(ii, sx, fs->dsx);
-				if (PetscAbsReal(xx-xc) <= dx_tot)
+				if (PetscAbsScalar(xx-xc) <= dx_tot)
 				{
 					ii1=PetscMin(ii1,ii);
 					ii2=PetscMax(ii2,ii);
@@ -1173,13 +1173,13 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 					dx = SIZE_CELL(ii, sx, fs->dsx);
 					xx = COORD_CELL(ii, sx, fs->dsx);
 
-					dxazim=PetscCosReal(azim)*(xx-xc)-PetscSinReal(azim)*(yy-yc);
-					dyazim=PetscSinReal(azim)*(xx-xc)+PetscCosReal(azim)*(yy-yc);
+					dxazim=PetscCosScalar(azim)*(xx-xc)-PetscSinScalar(azim)*(yy-yc);
+					dyazim=PetscSinScalar(azim)*(xx-xc)+PetscCosScalar(azim)*(yy-yc);
 
-					radbound=(PetscPowReal((dxazim/(dfac*filtx)),2) + PetscPowReal((dyazim/(dfac*filty)),2));					
+					radbound=(PetscPowScalar((dxazim/(dfac*filtx)),2) + PetscPowScalar((dyazim/(dfac*filty)),2));					
 					if (radbound<=1) //limit area of summing to within radbound of cell
 					{
-						w=PetscExpReal(-0.5*(PetscPowReal((dxazim/filtx),2) + PetscPowReal((dyazim/(str_y*filty)),2)))*dx*dy;
+						w=PetscExpScalar(-0.5*(PetscPowScalar((dxazim/filtx),2) + PetscPowScalar((dyazim/(str_y*filty)),2)))*dx*dy;
 						sum_sxx += sxx_prev[L][jj][ii]*w;
 						sum_magP += magP_prev[L][jj][ii]*w;
 						sum_w+=w;
@@ -1197,13 +1197,13 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 					dx = SIZE_CELL(ii,sx,fs->dsx);
 					xx = COORD_CELL(ii, sx, fs->dsx);
 
-					dxazim=PetscCosReal(azim)*(xx-xc)-PetscSinReal(azim)*(yy-yc);
-					dyazim=PetscSinReal(azim)*(xx-xc)+PetscCosReal(azim)*(yy-yc);
+					dxazim=PetscCosScalar(azim)*(xx-xc)-PetscSinScalar(azim)*(yy-yc);
+					dyazim=PetscSinScalar(azim)*(xx-xc)+PetscCosScalar(azim)*(yy-yc);
 
-					radbound=(PetscPowReal((dxazim/(dfac*filtx)),2) + PetscPowReal((dyazim/(dfac*filty)),2));					
+					radbound=(PetscPowScalar((dxazim/(dfac*filtx)),2) + PetscPowScalar((dyazim/(dfac*filty)),2));					
 					if (radbound<=1)  //limit area of summing to within radbound of cell
 					{
-						w=PetscExpReal(-0.5*(PetscPowReal((dxazim/filtx),2) + PetscPowReal((dyazim/(str_y*filty)),2)))*dx*dy;
+						w=PetscExpScalar(-0.5*(PetscPowScalar((dxazim/filtx),2) + PetscPowScalar((dyazim/(str_y*filty)),2)))*dx*dy;
 						sum_sxx += sxx[L][jj][ii]*w;
 						sum_magP += magP[L][jj][ii]*w;
 						sum_w+=w;
@@ -1221,13 +1221,13 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 					dx = SIZE_CELL(ii,sx,fs->dsx);
 					xx = COORD_CELL(ii, sx, fs->dsx);
 
-					dxazim=PetscCosReal(azim)*(xx-xc)-PetscSinReal(azim)*(yy-yc);
-					dyazim=PetscSinReal(azim)*(xx-xc)+PetscCosReal(azim)*(yy-yc);
+					dxazim=PetscCosScalar(azim)*(xx-xc)-PetscSinScalar(azim)*(yy-yc);
+					dyazim=PetscSinScalar(azim)*(xx-xc)+PetscCosScalar(azim)*(yy-yc);
 
-					radbound=(PetscPowReal((dxazim/(dfac*filtx)),2) + PetscPowReal((dyazim/(dfac*filty)),2));					
+					radbound=(PetscPowScalar((dxazim/(dfac*filtx)),2) + PetscPowScalar((dyazim/(dfac*filty)),2));					
 					if (radbound<=1)  //limit area of summing to within radbound of cell
 					{
-						w=PetscExpReal(-0.5*(PetscPowReal((dxazim/filtx),2) + PetscPowReal((dyazim/(str_y*filty)),2)))*dx*dy;
+						w=PetscExpScalar(-0.5*(PetscPowScalar((dxazim/filtx),2) + PetscPowScalar((dyazim/(str_y*filty)),2)))*dx*dy;
 						sum_sxx += sxx_next[L][jj][ii]*w;
 						sum_magP += magP_next[L][jj][ii]*w;
 						sum_w+=w;
@@ -1236,7 +1236,7 @@ PetscErrorCode Smooth_sxx_eff(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt  
 			} //end loop over cells from next proc
 
 			//sum_w=PetscMax(sum_w,0.0);  //why would sum_w be <0???!
-			magPressure[L][j][i]=(sum_magP/sum_w)*magPfac*PetscExpReal(-0.5*(PetscPowReal((PetscCosReal(azim)*(xcent-xc)/magPwidth),2)));
+			magPressure[L][j][i]=(sum_magP/sum_w)*magPfac*PetscExpScalar(-0.5*(PetscPowScalar((PetscCosScalar(azim)*(xcent-xc)/magPwidth),2)));
 			gsxx_eff_ave[L][j][i]=(sum_sxx/sum_w) + magPressure[L][j][i];
 			//gsxx_eff_ave[L][j][i]=(sum_sxx/sum_w) + magPressure[L][j][i];
 
@@ -1425,10 +1425,10 @@ PetscErrorCode Set_dike_zones(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt j
 		for(i=sx+1; i < sx+nx-1; i++) 
 		{
 			xcell=COORD_CELL(i, sx, fs->dsx);
-			if (PetscAbsReal(xcell-xcenter) <= mindist) //find indice of dike zone center (xcenter)
+			if (PetscAbsScalar(xcell-xcenter) <= mindist) //find indice of dike zone center (xcenter)
 			{
 				ixcenter=i;
-				mindist=PetscAbsReal(xcell-xcenter);
+				mindist=PetscAbsScalar(xcell-xcenter);
 			}
 		} //end loop to find ixcenter
  
@@ -1462,11 +1462,11 @@ PetscErrorCode Set_dike_zones(JacRes *jr, PetscInt nD, PetscInt nPtr, PetscInt j
 
 		xshift=x_maxsxx-xcenter;
 
-		if (xshift>0 && PetscAbsReal(xshift) > 0.5*SIZE_CELL(ixcenter, sx, fs->dsx)) //ensure new center is within width of cell to right of center
+		if (xshift>0 && PetscAbsScalar(xshift) > 0.5*SIZE_CELL(ixcenter, sx, fs->dsx)) //ensure new center is within width of cell to right of center
 		{
         	xshift=0.5*SIZE_CELL(ixcenter, sx, fs->dsx);
 		}
-		else if (xshift<0 && PetscAbsReal(xshift) > 0.5*SIZE_CELL(ixcenter-1, sx, fs->dsx)) //ensure its within the width of cell left of center
+		else if (xshift<0 && PetscAbsScalar(xshift) > 0.5*SIZE_CELL(ixcenter-1, sx, fs->dsx)) //ensure its within the width of cell left of center
 		{
         	xshift=-0.5*SIZE_CELL(ixcenter-1, sx, fs->dsx);
 		}
