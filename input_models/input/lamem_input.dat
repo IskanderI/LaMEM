@@ -668,7 +668,12 @@
     <PhaseTransitionStart>
         ID                      =   2                               # Phase_transition law ID
         Type                    =   NotInAirBox                     # A box-like region
-        PTBox_Bounds            =   200 400 -100 100 -1000 -500     # box bound coordinates: [left, right, front, back, bottom, top]
+        PTBox_Bounds            =   200 400 -100 100 -1000 -500     # For a single box: define the bounding coordinates: [left, right, front, back, bottom, top]
+        nsegs                   =   2                               # For multiple boxes (works with 1 box too) nseg=number of such boxes 
+        xbounds                 =   200 400 400 600                 # left1 right1 left2 right2, etc
+        ybounds                 =   -100  100  100 200              # front1 back1 front2 back2, etc
+        zbounds                 =   -1000 -500 -600  0              # bottom1 top1 bottom2 top2, etc
+        
         number_phases           =   1
         PhaseInside             =   7                               # Phase within the box  [use -1 if you don't want to change the phase inside the box]
         PhaseOutside            =   3                               # Phase outside the box [use -1 if you don't want to change the phase outside the box]
@@ -681,6 +686,8 @@
         PTBox_thermalAge        =   100                             # Thermal age, usually in geo-units [Myrs] [only in case of halfspace]
         PTBox_cstTemp           =   1200                            # Temp within box [only for constant T]
 
+        PhaseTransLinkRight	    =   2                               # [optional] Link the x-coord of current NotInAirbox to another (here 2) that is to the right and moves dynamically
+        PhaseTransLinkLeft	    =   4                               # [optional] Link the x-coord of current NotInAirbox to another (here 4) that is to the left and moves dynamically
         v_box                   =   0.2                             # [optional] only for NotInAirBox, velocity with which box moves in cm/yr  
         t0_box                  =   0.002                           # [optional] beginning time of movemen in Myr
         t1_box                  =   0.1                             # [optional] end time of movement in Myr
