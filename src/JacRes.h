@@ -193,7 +193,9 @@ struct JacRes
 
 	// velocity	components
 	Vec gvx,  gvy, gvz;  // global
+	Vec gvx_old,  gvy_old, gvz_old;  // global velocity from previous timestep (for inertia)
 	Vec lvx,  lvy, lvz;  // local (ghosted)
+	Vec lvx_old,  lvy_old, lvz_old;  // local from previous timestep (ghosted)
 	Vec dvxdx,dvxdy, dvxdz,dvydx,dvydy,dvydz,dvzdx,dvzdy,dvzdz;  // velocity tensor components
 
 	// momentum residual components
@@ -296,6 +298,9 @@ PetscErrorCode JacResCopySol(JacRes *jr, Vec x);
 
 // copy solution from global to local vectors, enforce boundary constraints
 PetscErrorCode JacResCopyVel(JacRes *jr, Vec x);
+
+// store current velocity as previous timestep state (for inertia)
+PetscErrorCode JacResStoreOldVelocity(JacRes *jr);
 
 // copy solution from global to local vectors, enforce boundary constraints
 PetscErrorCode JacResCopyPres(JacRes *jr, Vec x);

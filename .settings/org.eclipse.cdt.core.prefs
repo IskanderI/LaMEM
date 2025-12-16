@@ -1,0 +1,17 @@
+doxygen/doxygen_new_line_after_brief=true
+doxygen/doxygen_use_brief_tag=false
+doxygen/doxygen_use_javadoc_tags=true
+doxygen/doxygen_use_pre_tag=false
+doxygen/doxygen_use_structural_commands=false
+eclipse.preferences.version=1
+environment/project/0.1876400533/PATH/delimiter=\:
+environment/project/0.1876400533/PATH/operation=append
+environment/project/0.1876400533/PATH/value=/opt/homebrew/bin\:${PATH}
+environment/project/0.1876400533/PETSC_DEB/delimiter=\:
+environment/project/0.1876400533/PETSC_DEB/operation=replace
+environment/project/0.1876400533/PETSC_DEB/value=/Users/Ibrag003/software/petsc/petsc_3_24_deb_short
+environment/project/0.1876400533/PETSC_OPT/delimiter=\:
+environment/project/0.1876400533/PETSC_OPT/operation=replace
+environment/project/0.1876400533/PETSC_OPT/value=/Users/Ibrag003/software/petsc/petsc_3_24_deb_short
+environment/project/0.1876400533/append=true
+environment/project/0.1876400533/appendContributed=true

@@ -619,7 +619,7 @@ PetscErrorCode LaMEMLibSolve(LaMEMLib *lm, void *param, PetscLogStage stages[4])
 	PetscFunctionBeginUser;
 
 	// create Stokes preconditioner, matrix and nonlinear solver
-	ierr = PMatCreate(&pm, &lm->jr);    CHKERRQ(ierr);
+	ierr = PMatCreate(&pm, &lm->jr);    CHKERRQ(ierr); // @suppress("Function cannot be resolved")
 	ierr = PCStokesCreate(&pc, pm);     CHKERRQ(ierr);
 	ierr = NLSolCreate(&nl, pc, &snes); CHKERRQ(ierr);
 
@@ -628,7 +628,10 @@ PetscErrorCode LaMEMLibSolve(LaMEMLib *lm, void *param, PetscLogStage stages[4])
 	//==============
 	PetscCall(PetscLogStagePush(stages[0])); /* Start profiling stage*/
 
-	ierr = LaMEMLibInitGuess(lm, snes); CHKERRQ(ierr);
+	ierr = LaMEMLibInitGuess(lm, snes); CHKERRQ(ierr); // @suppress("Function cannot be resolved")
+
+	// initialize previous-step velocity storage for inertia
+	ierr = JacResStoreOldVelocity(&lm->jr); CHKERRQ(ierr);
 
 	PetscCall(PetscLogStagePop()); /* Stop profiling stage*/
 
@@ -670,6 +673,9 @@ PetscErrorCode LaMEMLibSolve(LaMEMLib *lm, void *param, PetscLogStage stages[4])
 		PetscCall(PetscLogStagePop()); /* Stop profiling stage*/
 		// print analyze convergence/divergence reason & iteration count
 		ierr = SNESPrintConvergedReason(snes, t); CHKERRQ(ierr);
+
+		// store converged velocity field for next timestep inertia term
+		ierr = JacResStoreOldVelocity(&lm->jr); CHKERRQ(ierr);
 
 		// view nonlinear residual
 		ierr = JacResViewRes(&lm->jr); CHKERRQ(ierr);

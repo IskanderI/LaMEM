@@ -29,19 +29,24 @@ PetscErrorCode FBLoad(FB **pfb, PetscBool DisplayOutput, char *restartFileName)
 	ierr = PetscMalloc(sizeof(FB), &fb); CHKERRQ(ierr);
 	ierr = PetscMemzero(fb, sizeof(FB)); CHKERRQ(ierr);
 
+
+
 	if(ISRankZero(PETSC_COMM_WORLD))
 	{
 		if(!restartFileName)
 		{
 			// check whether input file is specified
 			ierr = PetscOptionsGetCheckString("-ParamFile", buffer, &found); CHKERRQ(ierr);
-
+			PetscPrintf(PETSC_COMM_WORLD, "Filename is: %s \n", buffer);
+			filename = "/Users/Ibrag003/projects/inertia/LaMEM/input_models/BuildInSetups/FallingSpheres_inertia2d_Multigrid.dat";
+			PetscPrintf(PETSC_COMM_WORLD, "But now Filename is: %s \n", filename);
+			found = PETSC_TRUE;
 			if(found != PETSC_TRUE)
 			{
 				SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_USER, "Input file name is not specified. You must add the -ParamFile option to specify a LaMEM input file as in:  ./LaMEM -ParamFile your_input_file.dat \n");
 			}
 
-			filename = buffer;
+//			filename = buffer;
 		}
 		else
 		{

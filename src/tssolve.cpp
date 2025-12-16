@@ -153,7 +153,7 @@ PetscInt TSSolIsDone(TSSol *ts)
 		PrintStep(ts->istep + 1);
 		PetscPrintf(PETSC_COMM_WORLD, "--------------------------------------------------------------------------\n");
 		PetscPrintf(PETSC_COMM_WORLD, "Current time        : %7.8f %s \n", ts->time*scal->time, scal->lbl_time);
-		PetscPrintf(PETSC_COMM_WORLD, "Tentative time step : %7.8f %s \n", ts->dt  *scal->time, scal->lbl_time);
+		PetscPrintf(PETSC_COMM_WORLD, "Tentative time step : %.15e %s \n", ts->dt  *scal->time, scal->lbl_time);
 		PetscPrintf(PETSC_COMM_WORLD, "--------------------------------------------------------------------------\n");
 
 		done = 0;
