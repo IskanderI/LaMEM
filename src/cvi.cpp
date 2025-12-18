@@ -989,6 +989,19 @@ PetscErrorCode ADVelInterpSTAG(AdvVelCtx *vi)
 		vi->interp[jj].v[0] = InterpLin3D(lvx, I,  JJ, KK, sx, sy, sz, xp, yp, zp, ncx, ccy, ccz);
 		vi->interp[jj].v[1] = InterpLin3D(lvy, II, J,  KK, sx, sy, sz, xp, yp, zp, ccx, ncy, ccz);
 		vi->interp[jj].v[2] = InterpLin3D(lvz, II, JJ, K,  sx, sy, sz, xp, yp, zp, ccx, ccy, ncz);
+
+		/* Save current velocity to marker */
+		Marker *P = &vi->actx->markers[ vi->interp[jj].ind ];
+		
+		/* Shift old velocity to Vold */
+		P->Vold[0] = P->V[0];
+		P->Vold[1] = P->V[1];
+		P->Vold[2] = P->V[2];
+
+		/* Write current velocity to V */
+		P->V[0] = vi->interp[jj].v[0];
+		P->V[1] = vi->interp[jj].v[1];
+		P->V[2] = vi->interp[jj].v[2];
 	}
 
 	// restore access

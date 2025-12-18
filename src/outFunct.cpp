@@ -230,6 +230,23 @@ PetscErrorCode PVOutWriteViscCreep(OutVec* outvec)
 	PetscFunctionReturn(0);
 }
 //---------------------------------------------------------------------------
+PetscErrorCode PVOutWriteVelocityOld(OutVec* outvec)
+{
+	ACCESS_FUNCTION_HEADER
+
+	// scale like standard velocity output
+	cf = scal->velocity;
+	iflag.use_bound = 0;
+
+	// NOTE: old velocities on faces (lvx_old, lvy_old, lvz_old) are assumed
+	// to be already populated (e.g. via ADVProjMarkerVelToFaces) before output.
+	INTERPOLATE_ACCESS(jr->lvx_old, InterpXFaceCorner, 3, 0, 0.0)
+	INTERPOLATE_ACCESS(jr->lvy_old, InterpYFaceCorner, 3, 1, 0.0)
+	INTERPOLATE_ACCESS(jr->lvz_old, InterpZFaceCorner, 3, 2, 0.0)
+
+	PetscFunctionReturn(0);
+}
+//---------------------------------------------------------------------------
 PetscErrorCode PVOutWriteVelocity(OutVec* outvec)
 {
 	ACCESS_FUNCTION_HEADER

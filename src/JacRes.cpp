@@ -1325,9 +1325,9 @@ PetscErrorCode JacResGetResidual(JacRes *jr)
 		}
 
 		if (inertia) {
-			if(i == 0 || i == nx)  		fx[k][j][i]   += mx0; fx[k  ][j  ][i+1] += mx1;
-			if(j == 0 || j == ny)  		fx[k][j][i]   += my0; fx[k  ][j+1][i  ] += my1;
-			if(k == 0 || k == nz)  		fx[k][j][i]   += mz0; fx[k+1][j  ][i+1] += mz1;
+			if(i == 0 || i == nx)  		fx[k  ][j  ][i]   += mx0; fx[k  ][j  ][i+1] += mx1;
+			if(j == 0 || j == ny)  		fx[k  ][j+1][i]   += my0; fx[k  ][j+1][i  ] += my1;
+			if(k == 0 || k == nz)  		fx[k+1][j  ][i]   += mz0; fx[k+1][j  ][i  ] += mz1;
 		}
 
 
@@ -1731,7 +1731,6 @@ PetscErrorCode JacResCopyVel(JacRes *jr, Vec x)
 	PetscInt          i, j, k, nx, ny, nz, sx, sy, sz;
 	PetscScalar       ***bcvx,  ***bcvy,  ***bcvz;
 	PetscScalar       ***lvx, ***lvy, ***lvz;
-	PetscScalar       ***lvx_old, ***lvy_old, ***lvz_old;
 	PetscScalar       *vx, *vy, *vz, pmdof;
 	const PetscScalar *sol, *iter;
 
@@ -1773,17 +1772,11 @@ PetscErrorCode JacResCopyVel(JacRes *jr, Vec x)
 	GLOBAL_TO_LOCAL(fs->DA_X,   jr->gvx, jr->lvx)
 	GLOBAL_TO_LOCAL(fs->DA_Y,   jr->gvy, jr->lvy)
 	GLOBAL_TO_LOCAL(fs->DA_Z,   jr->gvz, jr->lvz)
-	GLOBAL_TO_LOCAL(fs->DA_X,   jr->gvx_old, jr->lvx_old)
-	GLOBAL_TO_LOCAL(fs->DA_Y,   jr->gvy_old, jr->lvy_old)
-	GLOBAL_TO_LOCAL(fs->DA_Z,   jr->gvz_old, jr->lvz_old)
 
-	// access local solution vectors
+	// access local solution vectors (current velocities)
 	ierr = DMDAVecGetArray(fs->DA_X,   jr->lvx, &lvx); CHKERRQ(ierr);
 	ierr = DMDAVecGetArray(fs->DA_Y,   jr->lvy, &lvy); CHKERRQ(ierr);
 	ierr = DMDAVecGetArray(fs->DA_Z,   jr->lvz, &lvz); CHKERRQ(ierr);
-	ierr = DMDAVecGetArray(fs->DA_X,   jr->lvx_old, &lvx_old); CHKERRQ(ierr);
-	ierr = DMDAVecGetArray(fs->DA_Y,   jr->lvy_old, &lvy_old); CHKERRQ(ierr);
-	ierr = DMDAVecGetArray(fs->DA_Z,   jr->lvz_old, &lvz_old); CHKERRQ(ierr);
 
 	// access boundary constraints vectors
 	ierr = DMDAVecGetArray(fs->DA_X,   bc->bcvx, &bcvx); CHKERRQ(ierr);
@@ -1881,9 +1874,6 @@ PetscErrorCode JacResCopyVel(JacRes *jr, Vec x)
 	ierr = DMDAVecRestoreArray(fs->DA_X,   jr->lvx,  &lvx);  CHKERRQ(ierr);
 	ierr = DMDAVecRestoreArray(fs->DA_Y,   jr->lvy,  &lvy);  CHKERRQ(ierr);
 	ierr = DMDAVecRestoreArray(fs->DA_Z,   jr->lvz,  &lvz);  CHKERRQ(ierr);
-	ierr = DMDAVecRestoreArray(fs->DA_X,   jr->lvx_old, &lvx_old); CHKERRQ(ierr);
-	ierr = DMDAVecRestoreArray(fs->DA_Y,   jr->lvy_old, &lvy_old); CHKERRQ(ierr);
-	ierr = DMDAVecRestoreArray(fs->DA_Z,   jr->lvz_old, &lvz_old); CHKERRQ(ierr);
 	ierr = DMDAVecRestoreArray(fs->DA_X,   bc->bcvx, &bcvx); CHKERRQ(ierr);
 	ierr = DMDAVecRestoreArray(fs->DA_Y,   bc->bcvy, &bcvy); CHKERRQ(ierr);
 	ierr = DMDAVecRestoreArray(fs->DA_Z,   bc->bcvz, &bcvz); CHKERRQ(ierr);
@@ -1903,11 +1893,6 @@ PetscErrorCode JacResStoreOldVelocity(JacRes *jr)
 	ierr = VecCopy(jr->gvx, jr->gvx_old); CHKERRQ(ierr);
 	ierr = VecCopy(jr->gvy, jr->gvy_old); CHKERRQ(ierr);
 	ierr = VecCopy(jr->gvz, jr->gvz_old); CHKERRQ(ierr);
-
-	// keep locals in sync with updated globals
-	GLOBAL_TO_LOCAL(jr->fs->DA_X, jr->gvx_old, jr->lvx_old)
-	GLOBAL_TO_LOCAL(jr->fs->DA_Y, jr->gvy_old, jr->lvy_old)
-	GLOBAL_TO_LOCAL(jr->fs->DA_Z, jr->gvz_old, jr->lvz_old)
 
 	PetscFunctionReturn(0);
 }

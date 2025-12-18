@@ -663,6 +663,9 @@ PetscErrorCode LaMEMLibSolve(LaMEMLib *lm, void *param, PetscLogStage stages[4])
 		// compute elastic parameters
 		ierr = JacResGetI2Gdt(&lm->jr); CHKERRQ(ierr);
 
+		/* project marker-based old velocities back to faces for inertia term */
+		ierr = ADVProjMarkerVelToFaces(&lm->actx); CHKERRQ(ierr);
+
 		// solve nonlinear equation system with SNES
 		PetscTime(&t);
 
@@ -674,7 +677,7 @@ PetscErrorCode LaMEMLibSolve(LaMEMLib *lm, void *param, PetscLogStage stages[4])
 		// print analyze convergence/divergence reason & iteration count
 		ierr = SNESPrintConvergedReason(snes, t); CHKERRQ(ierr);
 
-		// store converged velocity field for next timestep inertia term
+		/* store converged velocity field for next timestep inertia term */
 		ierr = JacResStoreOldVelocity(&lm->jr); CHKERRQ(ierr);
 
 		// view nonlinear residual

@@ -38,7 +38,10 @@ struct Marker
 	PetscScalar ATS;   // accumulated total strain
 	Tensor2RS   S;     // deviatoric stress
 	PetscScalar U[3];  // displacement
-
+	
+	/* Lagrangian velocity history on markers */
+    PetscScalar V[3];    // current marker velocity (vx, vy, vz)
+    PetscScalar Vold[3]; // previous-step marker velocity
 	// WARNING! after adding new field modify marker merge routine (below)
 };
 
@@ -264,6 +267,9 @@ PetscErrorCode ADVMapMarkToCells(AdvCtx *actx);
 
 // project history fields from markers to grid
 PetscErrorCode ADVProjHistMarkToGrid(AdvCtx *actx);
+
+/* project marker-based velocity history to face-centered old-velocity fields */
+PetscErrorCode ADVProjMarkerVelToFaces(AdvCtx *actx);
 
 // marker-to-cell projection
 PetscErrorCode ADVInterpMarkToCell(AdvCtx *actx);
