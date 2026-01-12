@@ -38,7 +38,7 @@ PetscErrorCode FBLoad(FB **pfb, PetscBool DisplayOutput, char *restartFileName)
 			// check whether input file is specified
 			ierr = PetscOptionsGetCheckString("-ParamFile", buffer, &found); CHKERRQ(ierr);
 			PetscPrintf(PETSC_COMM_WORLD, "Filename is: %s \n", buffer);
-			filename = "/Users/Ibrag003/projects/inertia/LaMEM/input_models/BuildInSetups/FallingSpheres_inertia2d_Multigrid.dat";
+			filename = "/Users/Ibrag003/project/inertia/LaMEM/input_models/BuildInSetups/FallingSpheres_inertia2d_Multigrid.dat";
 			PetscPrintf(PETSC_COMM_WORLD, "But now Filename is: %s \n", filename);
 			found = PETSC_TRUE;
 			if(found != PETSC_TRUE)

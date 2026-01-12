@@ -298,6 +298,7 @@ PetscErrorCode setUpPhase(ConstEqCtx *ctx, PetscInt ID)
 		if(p_total < p_lower) p_total = p_lower;
 	}
 
+
 	// compute cohesion and friction coefficient
 	ch = cos(fr)*ch;
 	fr = sin(fr);
@@ -452,6 +453,7 @@ PetscErrorCode getPhaseVisc(ConstEqCtx *ctx, PetscInt ID)
 
 				// set convergence flag
 				conv = (PetscAbsScalar((DIIpl - DIIplc)/DII) <= ctrl->lrtol);
+
 
 			} while(!conv && ++it < ctrl->lmaxit);
 		}

@@ -670,9 +670,10 @@ PetscErrorCode PMatMonoAssemble(PMat pm)
 		// compute density gradient stabilization terms
 		addDensGradStabil(fssa, v, rho, dt, grav, fdx, fdy, fdz, bdx, bdy, bdz);
 
-		// add lumped inertial mass term rho/dt to velocity diagonal entries
-		// (keeps Newton system consistent with added inertia in residual)
-		int inertia = 1;
+		/* add lumped inertial mass term rho/dt to velocity diagonal entries
+		 (keeps Newton system consistent with added inertia in residual) */
+		int inertia =1;
+//		if (jr->ctrl.inertia) {
 		if (inertia) {
 		{
 			PetscScalar mass = rho/dt;

@@ -1789,8 +1789,9 @@ PetscErrorCode ADVProjHistMarkToGrid(AdvCtx *actx)
 //---------------------------------------------------------------------------
 PetscErrorCode ADVProjMarkerVelToFaces(AdvCtx *actx)
 {
-	/* Project marker-based velocity history (Marker::V) back to face-centered
+	/* Project marker-based velocity history (Marker::Vold) back to face-centered
 	 * old-velocity fields lvx_old, lvy_old, lvz_old for use in inertia terms.
+	 * Uses Option 1: simple weight-based interpolation similar to ADVInterpMarkToEdge.
 	 */
 
 	FDSTAG      *fs;
@@ -1798,7 +1799,6 @@ PetscErrorCode ADVProjMarkerVelToFaces(AdvCtx *actx)
 	Marker      *P;
 	PetscInt     nx, ny, sx, sy, sz;
 	PetscInt     jj, ID, I, J, K;
-	PetscScalar *ncx, *ncy, *ncz;
 	PetscScalar ***lvx_old, ***lvy_old, ***lvz_old;
 
 	PetscErrorCode ierr;
@@ -1817,11 +1817,6 @@ PetscErrorCode ADVProjMarkerVelToFaces(AdvCtx *actx)
 	nx = fs->dsx.ncels;
 	ny = fs->dsy.ncels;
 
-	// node coordinates
-	ncx = fs->dsx.ncoor;
-	ncy = fs->dsy.ncoor;
-	ncz = fs->dsz.ncoor;
-
 	// zero old-velocity fields
 	ierr = VecZeroEntries(jr->lvx_old); CHKERRQ(ierr);
 	ierr = VecZeroEntries(jr->lvy_old); CHKERRQ(ierr);
@@ -1831,84 +1826,76 @@ PetscErrorCode ADVProjMarkerVelToFaces(AdvCtx *actx)
 	ierr = DMDAVecGetArray(fs->DA_Y, jr->lvy_old, &lvy_old); CHKERRQ(ierr);
 	ierr = DMDAVecGetArray(fs->DA_Z, jr->lvz_old, &lvz_old); CHKERRQ(ierr);
 
-	/* loop over markers and scatter their previous-step velocity V to faces */
-	for(jj = 0; jj < actx->nummark; ++jj)
+	/* loop over markers and scatter their previous-step velocity Vold to faces */
+	for(jj = 0; jj < actx->nummark; jj++)
 	{
-		PetscScalar xp, yp, zp;
-		PetscScalar nxs, nxe, nys, nye, nzs, nze;
-		PetscScalar xpl, ypl, zpl;
-		PetscScalar w000, w100, w010, w110, w001, w101, w011, w111;
+		PetscInt     II, JJ, KK;
+		PetscScalar  xp, yp, zp, xc, yc, zc;
+		PetscScalar  wxc, wyc, wzc, wxn, wyn, wzn;
 
-		P  = &actx->markers[jj];
+		// access next marker
+		P = &actx->markers[jj];
+
+		// get consecutive index of the host cell
+		ID = actx->cellnum[jj];
+
+		// expand I, J, K cell indices
+		GET_CELL_IJK(ID, I, J, K, nx, ny)
+
+		// get marker coordinates
 		xp = P->X[0];
 		yp = P->X[1];
 		zp = P->X[2];
 
-		/* host cell index (center grid) */
-		ID = actx->cellnum[jj];
-		GET_CELL_IJK(ID, I, J, K, nx, ny)
+		// get coordinates of cell center
+		xc = fs->dsx.ccoor[I];
+		yc = fs->dsy.ccoor[J];
+		zc = fs->dsz.ccoor[K];
 
-		/* bounding node coordinates of this cell */
-		nxs = ncx[sx + I    ];
-		nxe = ncx[sx + I + 1];
-		nys = ncy[sy + J    ];
-		nye = ncy[sy + J + 1];
-		nzs = ncz[sz + K    ];
-		nze = ncz[sz + K + 1];
+		// ============================================================
+		// Interpolate to X-faces (DA_X): X-normal faces
+		// X-faces are located at: X-nodes, Y-cell centers, Z-cell centers
+		// ============================================================
+		// find which X-face the marker is closest to
+		if(xp > xc) { II = I+1; } else { II = I; }
 
-		/* local coordinates in [0,1]^3 */
-		if(nxe > nxs) xpl = (xp - nxs)/(nxe - nxs); else xpl = 0.0;
-		if(nye > nys) ypl = (yp - nys)/(nye - nys); else ypl = 0.0;
-		if(nze > nzs) zpl = (zp - nzs)/(nze - nzs); else zpl = 0.0;
+		// calculate weights: node weight in X, cell weights in Y and Z
+		wxn = WEIGHT_POINT_NODE(II, xp, fs->dsx);
+		wyc = WEIGHT_POINT_CELL(J, yp, fs->dsy);
+		wzc = WEIGHT_POINT_CELL(K, zp, fs->dsz);
 
-		/* clamp for safety */
-		if(xpl < 0.0) xpl = 0.0; if(xpl > 1.0) xpl = 1.0;
-		if(ypl < 0.0) ypl = 0.0; if(ypl > 1.0) ypl = 1.0;
-		if(zpl < 0.0) zpl = 0.0; if(zpl > 1.0) zpl = 1.0;
+		// interpolate X-component of old velocity to X-faces
+		lvx_old[sz+K][sy+J][sx+II] += wxn*wyc*wzc*P->Vold[0];
 
-		/* trilinear weights for 8 surrounding nodes */
-		w000 = (1-xpl)*(1-ypl)*(1-zpl);
-		w100 = xpl    *(1-ypl)*(1-zpl);
-		w010 = (1-xpl)*ypl    *(1-zpl);
-		w110 = xpl    *ypl    *(1-zpl);
-		w001 = (1-xpl)*(1-ypl)*zpl;
-		w101 = xpl    *(1-ypl)*zpl;
-		w011 = (1-xpl)*ypl    *zpl;
-		w111 = xpl    *ypl    *zpl;
- TODO check how many velocity coordinates we have - where 8 came from?
-		/* scatter marker velocity history P->V to nearby face DOFs 
-		 NOTE: this is a simple CIC-style projector; for higher-order CVI
-		 one can refine these stencils following ADVelInterpSTAGP. */
+		// ============================================================
+		// Interpolate to Y-faces (DA_Y): Y-normal faces
+		// Y-faces are located at: X-cell centers, Y-nodes, Z-cell centers
+		// ============================================================
+		// find which Y-face the marker is closest to
+		if(yp > yc) { JJ = J+1; } else { JJ = J; }
 
-		/* X-faces (DA_X) */
-		lvx_old[sz+K  ][sy+J  ][sx+I  ] += w000 * P->V[0];
-		lvx_old[sz+K  ][sy+J  ][sx+I+1] += w100 * P->V[0];
-		lvx_old[sz+K  ][sy+J+1][sx+I  ] += w010 * P->V[0];
-		lvx_old[sz+K  ][sy+J+1][sx+I+1] += w110 * P->V[0];
-		lvx_old[sz+K+1][sy+J  ][sx+I  ] += w001 * P->V[0];
-		lvx_old[sz+K+1][sy+J  ][sx+I+1] += w101 * P->V[0];
-		lvx_old[sz+K+1][sy+J+1][sx+I  ] += w011 * P->V[0];
-		lvx_old[sz+K+1][sy+J+1][sx+I+1] += w111 * P->V[0];
+		// calculate weights: cell weight in X, node weight in Y, cell weight in Z
+		wxc = WEIGHT_POINT_CELL(I, xp, fs->dsx);
+		wyn = WEIGHT_POINT_NODE(JJ, yp, fs->dsy);
+		wzc = WEIGHT_POINT_CELL(K, zp, fs->dsz);
 
-		/* Y-faces (DA_Y) */
-		lvy_old[sz+K  ][sy+J  ][sx+I  ] += w000 * P->V[1];
-		lvy_old[sz+K  ][sy+J  ][sx+I+1] += w100 * P->V[1];
-		lvy_old[sz+K  ][sy+J+1][sx+I  ] += w010 * P->V[1];
-		lvy_old[sz+K  ][sy+J+1][sx+I+1] += w110 * P->V[1];
-		lvy_old[sz+K+1][sy+J  ][sx+I  ] += w001 * P->V[1];
-		lvy_old[sz+K+1][sy+J  ][sx+I+1] += w101 * P->V[1];
-		lvy_old[sz+K+1][sy+J+1][sx+I  ] += w011 * P->V[1];
-		lvy_old[sz+K+1][sy+J+1][sx+I+1] += w111 * P->V[1];
+		// interpolate Y-component of old velocity to Y-faces
+		lvy_old[sz+K][sy+JJ][sx+I] += wxc*wyn*wzc*P->Vold[1];
 
-		/* Z-faces (DA_Z) */
-		lvz_old[sz+K  ][sy+J  ][sx+I  ] += w000 * P->V[2];
-		lvz_old[sz+K  ][sy+J  ][sx+I+1] += w100 * P->V[2];
-		lvz_old[sz+K  ][sy+J+1][sx+I  ] += w010 * P->V[2];
-		lvz_old[sz+K  ][sy+J+1][sx+I+1] += w110 * P->V[2];
-		lvz_old[sz+K+1][sy+J  ][sx+I  ] += w001 * P->V[2];
-		lvz_old[sz+K+1][sy+J  ][sx+I+1] += w101 * P->V[2];
-		lvz_old[sz+K+1][sy+J+1][sx+I  ] += w011 * P->V[2];
-		lvz_old[sz+K+1][sy+J+1][sx+I+1] += w111 * P->V[2];
+		// ============================================================
+		// Interpolate to Z-faces (DA_Z): Z-normal faces
+		// Z-faces are located at: X-cell centers, Y-cell centers, Z-nodes
+		// ============================================================
+		// find which Z-face the marker is closest to
+		if(zp > zc) { KK = K+1; } else { KK = K; }
+
+		// calculate weights: cell weights in X and Y, node weight in Z
+		wxc = WEIGHT_POINT_CELL(I, xp, fs->dsx);
+		wyc = WEIGHT_POINT_CELL(J, yp, fs->dsy);
+		wzn = WEIGHT_POINT_NODE(KK, zp, fs->dsz);
+
+		// interpolate Z-component of old velocity to Z-faces
+		lvz_old[sz+KK][sy+J][sx+I] += wxc*wyc*wzn*P->Vold[2];
 	}
 
 	/* restore access */
